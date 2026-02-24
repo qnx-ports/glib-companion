@@ -1,0 +1,13 @@
+diff --git a/gio/gcredentialsprivate.h b/gio/gcredentialsprivate.h
+index 0310a75421..2d6bac758b 100644
+--- a/gio/gcredentialsprivate.h
++++ b/gio/gcredentialsprivate.h
+@@ -117,6 +117,7 @@
+ #elif defined(__FreeBSD__)                                  || \
+       defined(__FreeBSD_kernel__) /* Debian GNU/kFreeBSD */ || \
+       defined(__GNU__)            /* GNU Hurd */            || \
++      defined(__QNX__)            /* Blackberry QNX */      || \
+       defined(__DragonFly__)      /* DragonFly BSD */
+ #define G_CREDENTIALS_SUPPORTED 1
+ #define G_CREDENTIALS_USE_FREEBSD_CMSGCRED 1
+

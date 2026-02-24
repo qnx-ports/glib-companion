@@ -1,0 +1,17 @@
+diff --git a/glib/gprintf.c b/glib/gprintf.c
+index 3e775ad..6f373fa 100644
+--- a/glib/gprintf.c
++++ b/glib/gprintf.c
+@@ -28,6 +28,12 @@
+ #include "gprintfint.h"
+ #include "gprintprivate.h"
+ 
++extern char* output_for_percent_s_NULL;
++
++static void __attribute__((constructor)) fix_printf_segfault()
++{
++  output_for_percent_s_NULL = "(null)";
++}
+ 
+ /**
+  * g_printf:

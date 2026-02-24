@@ -1,0 +1,40 @@
+diff --git a/gio/tests/socket-testserver.c b/gio/tests/socket-testserver.c
+index 61715b0..22676ff 100644
+--- a/gio/tests/socket-testserver.c
++++ b/gio/tests/socket-testserver.c
+@@ -13,7 +13,7 @@ gboolean non_blocking = FALSE;
+ gboolean use_udp = FALSE;
+ int cancel_timeout = 0;
+ int read_timeout = 0;
+-int delay = 0;
++int delay_time = 0;
+ gboolean unix_socket = FALSE;
+ const char *tls_cert_file = NULL;
+ 
+@@ -34,8 +34,8 @@ static GOptionEntry cmd_entries[] = {
+   {"unix", 'U', 0, G_OPTION_ARG_NONE, &unix_socket,
+    "Use a unix socket instead of IP", NULL},
+ #endif
+-  {"delay", 'd', 0, G_OPTION_ARG_INT, &delay,
+-   "Delay responses by the specified number of seconds", NULL},
++  {"delay_time", 'd', 0, G_OPTION_ARG_INT, &delay_time,
++   "delay_time responses by the specified number of seconds", NULL},
+   {"timeout", 't', 0, G_OPTION_ARG_INT, &read_timeout,
+    "Time out reads after the specified number of seconds", NULL},
+   {"tls", 'T', 0, G_OPTION_ARG_STRING, &tls_cert_file,
+@@ -287,11 +287,11 @@ main (int argc,
+ 
+       to_send = size;
+ 
+-      if (delay)
++      if (delay_time)
+ 	{
+ 	  if (verbose)
+-	    g_print ("delaying %d seconds before response\n", delay);
+-	  g_usleep (1000 * 1000 * delay);
++	    g_print ("delay_timeing %d seconds before response\n", delay_time);
++	  g_usleep (1000 * 1000 * delay_time);
+ 	}
+ 
+       while (to_send > 0)
+

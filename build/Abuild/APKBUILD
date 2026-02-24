@@ -1,0 +1,134 @@
+pkgname=glib
+pkgver=2.86.2
+_gi_version=1.86.0
+pkgrel=1
+pkgdesc="Low-level core library that forms the basis for projects such as GTK+ and GNOME."
+arch="all"
+license="LGPL-2.1-or-later"
+url="https://www.gtk.org/"
+triggers="$pkgname.trigger=/usr/share/glib-2.0/schemas:/usr/lib/gio/modules:/usr/lib/gtk-4.0"
+depends_dev="
+    libffi-dev
+    pcre2-dev
+    bzip2-dev
+    gettext-dev
+    zlib-ng-dev
+    libxml2-utils
+    python3
+    python3-packaging
+    qnx-io-sock-dev
+    libxslt
+    "
+makedepends="$depends_dev
+    bison
+    flex
+    meson 
+    ninja 
+    pkgconf
+    python3-dev
+    pkgconf-dev
+    python3-setuptools
+    qnx-io-sock-dev
+    libiconv-dev
+    "
+depends="qnx-io-sock libintl bzip2 libbz2 zlib-ng pcre2 libiconv libffi libiconv libexpat libiconv"
+options="!strip"
+
+subpackages="${pkgname}-static ${pkgname}-dev ${pkgname}-bash-completion"
+source="https://download.gnome.org/sources/glib/${pkgver%.*}/glib-$pkgver.tar.xz
+        https://download.gnome.org/sources/gobject-introspection/${_gi_version%.*}/gobject-introspection-$_gi_version.tar.xz
+        fix-atomic.patch
+        fix-test-symbol-conflicts.patch
+	    use-freebsd-gcred.patch
+        fix-faccessat-on-QNX.patch
+	    fix-printf-null-segfault.patch
+    "
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+    export CFLAGS="$CFLAGS"
+    _prefix="$PWD/boostrap-glib"
+    msg "build bootstrap glib"
+    meson setup build  \
+        -Dtests=false \
+        -Dxattr=false \
+	    -Db_lto=false \
+        -Dnls=disabled \
+        -Dintrospection=disabled \
+        --buildtype=release \
+        --prefix=$_prefix \
+	-Dc_link_args=-Wl,-lsocket,-lm,-lgcc_s
+    meson compile -C build
+    meson install --no-rebuild -C build
+
+    msg "build bootstrap gobject-introspection"
+    cd $srcdir/gobject-introspection-$_gi_version
+    meson setup build \
+        -Dcairo=disabled \
+        -Dbuild_introspection_data=false \
+	    -Db_lto=false \
+        --buildtype=release \
+        --prefix=$_prefix \
+        --pkg-config-path="$_prefix"/lib/pkgconfig \
+        -Dc_link_args=-Wl,-lsocket,-lm
+    meson compile -C build
+    meson install --no-rebuild -C build
+
+    msg "build final glib"
+    cd $builddir
+    PATH="$_prefix/bin:$PATH" LD_LIBRARY_PATH="$_prefix/lib:$LD_LIBRARY_PATH" \
+    meson setup build \
+        --reconfigure \
+        -Dtests=false \
+        -Dxattr=false \
+	    -Db_lto=false \
+        -Dnls=disabled \
+        -Ddefault_library=both \
+        -Dintrospection=enabled \
+        --buildtype=release \
+        --prefix=/usr \
+        --pkg-config-path="$_prefix"/lib/pkgconfig \
+        -Dc_link_args=-Wl,-lsocket,-lm,-lgcc_s
+
+    PATH="$_prefix/bin:$PATH" LD_LIBRARY_PATH="$_prefix/lib:$LD_LIBRARY_PATH" \
+    meson compile -C build
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+dev() {
+    default_dev
+    mkdir -p "$subpkgdir"/usr/bin "$subpkgdir"/usr/share
+    find "$pkgdir"/usr/bin ! -name "glib-compile-schemas" -a \( \
+        -name "gdbus-codegen" -o \
+        -name "gobject-query" -o \
+        -name "gresource" -o \
+        -name "gtester*" -o \
+        -name "glib-*" \) \
+        -exec mv {} "$subpkgdir"/usr/bin \;
+
+    amove usr/share/gdb usr/share/glib-2.0
+}
+
+static() {
+    default_static
+    depends="gettext-static"
+
+}
+
+check() {
+    # not all tests are passed for now, just an experimental build
+    meson test --print-errorlogs -C build
+}
+
+sha512sums="
+b9ef7ea7e1eeff142a8ab76fb0552331fd642133a31505e2939f57d7d9c5ec86dcefddc725c715925a42c348d71e2a8bf2eb399150108199b6daeca2761e08d6  glib-2.86.2.tar.xz
+a9d2edbe1cea710e10ef1ea8059a45cf5689bace43b5d2a6861809e863a6de7114b4763db8df3916ad6202c9967f48f7997acd0810a86e5e88dea7e0be88b585  gobject-introspection-1.86.0.tar.xz
+131fae453c7e3426c7817ca20a56e50750251c053dd2e1b887c24f380b4cf57547b605083b3ea24c5849f95e039dd292f619452745e88a735f90b8e9a1880627  fix-atomic.patch
+e596c5d6fe5e09300fcff138e840593d3ea6a7ef6983f7ece746fb5f1633107310158097b9a3c8e88dc28eef1205b026ca3475b6e6d96fdc2ca0acc46072bd4e  fix-test-symbol-conflicts.patch
+16f16283a8f0274b5fadb1e19b391e6986298fb30e643d63c904c615ba98726885c5d33f2582f3a62a2c71811aa6e62ff05fa17f3fb5127ce54613ccb00140a5  use-freebsd-gcred.patch
+698fa46d488ecba98957ca5068a73f2c426c58067d3ab402cd110a107e4a646923ccfaa2f8a748c33c6344467cb92138ae0c650c25831d448e601a58c86b8728  fix-faccessat-on-QNX.patch
+d04cc33e524287db07aa5569b2376f927cafb73e4a47e94c4f959323121df894e1b990c8642fc52e86a8d938118e4566164df7cd9ef22afe7c14dca988bf3321  fix-printf-null-segfault.patch
+"

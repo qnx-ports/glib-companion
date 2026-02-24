@@ -1,0 +1,14 @@
+diff --git a/meson.build b/meson.build
+index 7ed981d..df52798 100644
+--- a/meson.build
++++ b/meson.build
+@@ -2294,7 +2294,7 @@ libatomic_test_code = '''
+   }'''
+ atomic_dep = []
+ if cc.links(libatomic_test_code, args : '-latomic', name : 'check for -latomic')
+-  atomic_dep = cc.find_library('atomic')
++  atomic_dep = cc.find_library('atomic', required: false)
+ endif
+ 
+ # First check in libc, fallback to libintl, and as last chance build
+
